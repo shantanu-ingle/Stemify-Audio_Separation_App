@@ -1,0 +1,95 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  text-align: center;
+  padding: 20px;
+}
+
+.nav {
+  background-color: #6200ea;
+  padding: 10px;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.main {
+  margin-top: 20px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.subheading {
+  font-size: 16px;
+  color: #555;
+}
+
+.audioPlayer {
+  margin: 20px auto;
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+
+.audioTitle {
+  font-size: 18px;
+  font-weight: bold;
+  color: #444;
+}
+
+.playerControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.playButton,
+.muteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6200ea;
+}
+
+.seekBar {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.timeDisplay {
+  font-size: 14px;
+  color: #777;
+}
+
+.volumeControl {
+  display: flex;
+  align-items: center;
+}
+
+.volumeBar {
+  margin-left: 5px;
+}
+
+.downloadButton {
+  background-color: transparent;
+  border: none;
+  color: #A855F7;
+  cursor: pointer;
+}

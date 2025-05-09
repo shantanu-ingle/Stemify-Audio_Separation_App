@@ -1,0 +1,14 @@
+.audio-player {
+    background: #1A1A23;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .audio-title {
+    color: #b3b3cc;
+    font-size: 1rem;
+  }
+  

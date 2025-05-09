@@ -1,0 +1,22 @@
+.file-upload-container {
+    border: 2px dashed #a855f7;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .file-upload-container:hover {
+    border-color: #10b981;
+  }
+  
+  .file-upload-input {
+    display: none;
+  }
+  
+  .error-message {
+    color: red;
+    margin-top: 10px;
+  }
+  

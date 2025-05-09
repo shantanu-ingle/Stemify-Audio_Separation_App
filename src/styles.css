@@ -1,0 +1,73 @@
+/* styles.css */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #0F0F13;
+  color: white;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.main {
+  max-width: 800px;
+  width: 100%;
+}
+
+.heading {
+  font-size: 2.5rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #a855f7, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subheading {
+  font-size: 1.2rem;
+  color: #b3b3cc;
+  margin-bottom: 20px;
+}
+
+.upload-button {
+  background-color: #1A1A23;
+  color: #b3b3cc;
+  border: 2px solid #a855f7;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.upload-button:hover {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.audio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.play-all-button {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s;
+}
+
+.play-all-button:hover {
+  background-color: #0f8554;
+}
