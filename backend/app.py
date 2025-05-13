@@ -30,67 +30,43 @@ SAMPLE_RATE = 44100
 BASS_FREQ_RANGE = (40, 200)
 
 def detect_key_tempo(file_path, sr=44100, tempo_range=(60, 180)):
-    """
-    Accurately detect the musical key and tempo of an audio file (WAV or MP3).
-    
-    Args:
-        file_path (str): Path to the audio file.
-        sr (int): Sampling rate (default: 44100 Hz).
-        tempo_range (tuple): Valid tempo range (min, max) in BPM.
-    
-    Returns:
-        dict: {'key': str, 'tempo': float, 'key_confidence': float, 'tempo_confidence': float}
-    """
     try:
-        # Validate file
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
         if not file_path.lower().endswith(('.wav', '.mp3')):
             raise ValueError("File must be .wav or .mp3")
 
-        # Load audio file
         logging.info(f"Loading audio file for key/tempo detection: {file_path}")
         y, sr = librosa.load(file_path, sr=sr, mono=True)
         duration = librosa.get_duration(y=y, sr=sr)
         logging.info(f"Audio loaded: duration={duration:.2f}s, sr={sr}")
 
-        # Tempo detection
-        # Use onset strength with smoothing for robust beat tracking
         onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=512)
-        # Apply smoothing to reduce noise
         onset_env = librosa.util.normalize(onset_env)
         tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr, hop_length=512)
-        # Refine tempo with multiple candidates
         tempos = librosa.feature.rhythm.tempo(onset_envelope=onset_env, sr=sr, hop_length=512)
-        # Handle double/half tempo errors
         candidate_tempos = [tempo, tempo/2, tempo*2]
         valid_tempos = [t for t in candidate_tempos if tempo_range[0] <= t <= tempo_range[1]]
         if valid_tempos:
             tempo = np.median(valid_tempos)
         else:
             tempo = np.median(tempos)
-        # Compute tempo confidence based on beat consistency
         beat_intervals = np.diff(librosa.frames_to_time(beats, sr=sr, hop_length=512))
         tempo_confidence = 1.0 / (np.std(beat_intervals) + 1e-8) if len(beat_intervals) > 0 else 0.0
-        tempo_confidence = min(1.0, max(0.0, tempo_confidence / 10.0))  # Normalize to [0, 1]
+        tempo_confidence = min(1.0, max(0.0, tempo_confidence / 10.0))
         logging.info(f"Detected tempo: {tempo:.2f} BPM (confidence: {tempo_confidence:.2f})")
 
-        # Key detection
-        # Use harmonic component for clearer pitch analysis
         y_harmonic, _ = librosa.effects.hpss(y)
         chroma = librosa.feature.chroma_cqt(y=y_harmonic, sr=sr, hop_length=512, fmin=librosa.note_to_hz('C1'))
-        chroma_mean = np.mean(chroma, axis=1)  # Shape: (12,)
-        # Krumhansl-Schmuckler key profiles
+        chroma_mean = np.mean(chroma, axis=1)
         key_profiles = np.zeros((24, 12))
         major_profile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
         minor_profile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
         for i in range(12):
             key_profiles[i] = np.roll(major_profile, i)
             key_profiles[i + 12] = np.roll(minor_profile, i)
-        # Normalize profiles and chroma
         key_profiles = key_profiles / (np.std(key_profiles, axis=1, keepdims=True) + 1e-8)
         chroma_mean = chroma_mean / (np.std(chroma_mean) + 1e-8)
-        # Compute correlations
         correlations = np.array([np.corrcoef(chroma_mean, profile)[0, 1] for profile in key_profiles])
         key_idx = np.argmax(correlations)
         key_names = [
@@ -100,9 +76,7 @@ def detect_key_tempo(file_path, sr=44100, tempo_range=(60, 180)):
             'F# Minor', 'G Minor', 'G# Minor', 'A Minor', 'A# Minor', 'B Minor'
         ]
         key = key_names[key_idx]
-        # Compute key confidence
         key_confidence = correlations[key_idx] / (np.sum(correlations) + 1e-8)
-        # Resolve minor/major ambiguity
         if 'Minor' in key:
             relative_major_idx = (key_idx - 12 - 3) % 12
             if correlations[relative_major_idx] > correlations[key_idx] * 0.95:
@@ -121,7 +95,6 @@ def detect_key_tempo(file_path, sr=44100, tempo_range=(60, 180)):
         logging.error(f"Error processing {file_path}: {e}")
         return {'key': 'Unknown', 'tempo': 0.0, 'key_confidence': 0.0, 'tempo_confidence': 0.0}
 
-# Memory monitoring function
 def print_memory_usage():
     try:
         process = psutil.Process(os.getpid())
@@ -131,7 +104,6 @@ def print_memory_usage():
     except Exception as e:
         logging.error(f"Error in print_memory_usage: {e}")
 
-# AttentionGate class
 class AttentionGate(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -159,7 +131,6 @@ class AttentionGate(nn.Module):
             logging.error(f"Error in AttentionGate.forward: {e}")
             raise
 
-# ResidualBlock class
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
@@ -183,7 +154,6 @@ class ResidualBlock(nn.Module):
             logging.error(f"Error in ResidualBlock.forward: {e}")
             raise
 
-# DeepMultiSourceUNet class
 class DeepMultiSourceUNet(nn.Module):
     def __init__(self):
         super(DeepMultiSourceUNet, self).__init__()
@@ -440,7 +410,6 @@ def process_audio_file(model, audio_path, output_dir, device, n_fft=N_FFT, hop_l
                 logging.error(f"Error processing source {name}: {e}")
                 continue
 
-        # Save processing ID and song name for later use
         with open(os.path.join(output_subdir, "metadata.txt"), "w") as f:
             f.write(f"proc_id={os.path.basename(output_dir)}\nsong_name={song_name}")
 
@@ -449,7 +418,6 @@ def process_audio_file(model, audio_path, output_dir, device, n_fft=N_FFT, hop_l
         logging.error(f"Error in process_audio_file: {e}")
         raise
 
-# Flask App + Routes
 app = Flask(__name__)
 CORS(app)
 
@@ -483,7 +451,6 @@ def process_audio():
         file.save(infile)
         logging.info(f"Saved input file: {infile}")
 
-        # Detect key and tempo of the original input song
         key_tempo_result = detect_key_tempo(infile)
         metadata = {
             'key': key_tempo_result['key'],
@@ -526,38 +493,62 @@ def view_notes(proc_id, song_name, source):
         if not os.path.exists(wav_path):
             return jsonify({'error': f"{source}.wav not found"}), 404
 
-        # Construct PDF output path
+        # Construct file paths
+        output_dir = r"C:\Users\OMEN\Saved Programs\Projects\Frontend new\Combined app\output"
         pdf_name = f"output_{source}.pdf"
-        pdf_path = os.path.join(r"C:\Users\OMEN\Saved Programs\Projects\Frontend new\Combined app\output", pdf_name)
+        xml_name = f"output_{source}.xml"
+        pdf_path = os.path.join(output_dir, pdf_name)
+        xml_path = os.path.join(output_dir, xml_name)
 
-        # Check if PDF already exists
-        if os.path.exists(pdf_path):
-            logging.info(f"Serving existing PDF: {pdf_path}")
-            return send_from_directory(
-                r"C:\Users\OMEN\Saved Programs\Projects\Frontend new\Combined app\output",
-                pdf_name,
-                as_attachment=False,
-                mimetype='application/pdf'
-            )
+        # Get query parameter for file type
+        file_type = request.args.get('type', 'pdf')  # Default to 'pdf' if not specified
 
-        # Trigger transcription
-        transcription_func = {
-            'bass': process_bass_recording,
-            'drums': process_drum_recording,
-            'vocals': process_vocal_recording
-        }[source]
-        result = transcription_func(wav_path)
-        if result and os.path.exists(result):
-            logging.info(f"Generated and serving PDF: {result}")
-            return send_from_directory(
-                r"C:\Users\OMEN\Saved Programs\Projects\Frontend new\Combined app\output",
-                pdf_name,
-                as_attachment=False,
-                mimetype='application/pdf'
-            )
+        # Check if files exist, if not, generate them
+        if not os.path.exists(pdf_path) or not os.path.exists(xml_path):
+            transcription_func = {
+                'bass': process_bass_recording,
+                'drums': process_drum_recording,
+                'vocals': process_vocal_recording
+            }[source]
+            result = transcription_func(wav_path)
+            if not result or not os.path.exists(result):
+                logging.error(f"Failed to generate PDF for {source}")
+                return jsonify({'error': f"Failed to generate PDF for {source}"}), 500
+
+        # Handle file type request
+        if file_type == 'xml':
+            if os.path.exists(xml_path):
+                logging.info(f"Serving XML: {xml_path}")
+                return send_from_directory(
+                    output_dir,
+                    xml_name,
+                    as_attachment=True,
+                    download_name=f"{source}_notes.xml",
+                    mimetype='application/xml'
+                )
+            else:
+                return jsonify({'error': f"XML file for {source} not found"}), 404
+        elif file_type == 'pdf':
+            if os.path.exists(pdf_path):
+                logging.info(f"Serving PDF: {pdf_path}")
+                return send_from_directory(
+                    output_dir,
+                    pdf_name,
+                    as_attachment=False,
+                    download_name=f"{source}_notes.pdf",
+                    mimetype='application/pdf'
+                )
+            else:
+                return jsonify({'error': f"PDF file for {source} not found"}), 404
+        elif file_type == 'both':
+            # For downloading both, we'll need to handle this on the frontend
+            return jsonify({
+                'pdf_url': f"{request.host_url}view-notes/{proc_id}/{song_name}/{source}?type=pdf",
+                'xml_url': f"{request.host_url}view-notes/{proc_id}/{song_name}/{source}?type=xml"
+            })
         else:
-            logging.error(f"Failed to generate PDF for {source}")
-            return jsonify({'error': f"Failed to generate PDF for {source}"}), 500
+            return jsonify({'error': 'Invalid file type requested'}), 400
+
     except Exception as e:
         logging.error(f"Error in view_notes: {e}")
         return jsonify({'error': str(e)}), 500

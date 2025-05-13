@@ -19,7 +19,7 @@ function App() {
   const [error, setError] = useState(null)
   const [viewingPdf, setViewingPdf] = useState(null)
   const [currentPage, setCurrentPage] = useState("home")
-  const [audioMetadata, setAudioMetadata] = useState({})  // Initialize as empty object
+  const [audioMetadata, setAudioMetadata] = useState({})
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0]
@@ -36,7 +36,7 @@ function App() {
         proc_id: null,
         song_name: null
       })
-      setAudioMetadata({})  // Reset metadata on new upload
+      setAudioMetadata({})
     } else {
       setError("Please upload a valid .mp3 or .wav file.")
       setInputFile(null)
@@ -76,7 +76,6 @@ function App() {
         song_name: data.song_name
       })
 
-      // Update audioMetadata with key and tempo from backend
       setAudioMetadata({
         key: data.metadata.key || "Unknown",
         tempo: data.metadata.tempo ? `${data.metadata.tempo} BPM` : "0.0 BPM"
@@ -155,13 +154,24 @@ function App() {
       return `${minutes}:${seconds.toString().padStart(2, "0")}`
     }
 
-    const handleDownload = () => {
-      const link = document.createElement("a")
-      link.href = src
-      link.download = `${title}.wav`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+    const handleDownload = async () => {
+      try {
+        const response = await fetch(src)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch WAV file: ${response.statusText}`)
+        }
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `${title}.wav`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        console.error(`Failed to download ${title}:`, err)
+      }
     }
 
     return (
@@ -220,23 +230,58 @@ function App() {
   const TrackContainer = ({ title, src, color, icon, notesUrl }) => {
     const handleViewPdf = () => {
       if (notesUrl) {
-        // Open PDF in a new tab
         window.open(notesUrl, '_blank')
       } else {
         console.error(`No notes URL for ${title}`)
       }
     }
 
-    const handleDownloadPdf = () => {
-      if (notesUrl) {
-        const link = document.createElement("a")
-        link.href = notesUrl
-        link.download = `notes-${title.toLowerCase()}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } else {
+    const handleDownloadPdf = async () => {
+      if (!notesUrl) {
         console.error(`No notes URL for ${title}`)
+        return
+      }
+
+      try {
+        // Fetch both PDF and XML URLs
+        const response = await fetch(`${notesUrl}?type=both`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file URLs: ${response.statusText}`)
+        }
+        const data = await response.json()
+
+        // Download PDF
+        const pdfResponse = await fetch(data.pdf_url)
+        if (!pdfResponse.ok) {
+          throw new Error(`Failed to fetch PDF: ${pdfResponse.statusText}`)
+        }
+        const pdfBlob = await pdfResponse.blob()
+        const pdfUrl = window.URL.createObjectURL(pdfBlob)
+        const pdfLink = document.createElement("a")
+        pdfLink.href = pdfUrl
+        pdfLink.download = `notes-${title.toLowerCase()}.pdf`
+        document.body.appendChild(pdfLink)
+        pdfLink.click()
+        document.body.removeChild(pdfLink)
+        window.URL.revokeObjectURL(pdfUrl)
+
+        // Download XML
+        const xmlResponse = await fetch(data.xml_url)
+        if (!xmlResponse.ok) {
+          throw new Error(`Failed to fetch XML: ${xmlResponse.statusText}`)
+        }
+        const xmlBlob = await xmlResponse.blob()
+        const xmlUrl = window.URL.createObjectURL(xmlBlob)
+        const xmlLink = document.createElement("a")
+        xmlLink.href = xmlUrl
+        xmlLink.download = `notes-${title.toLowerCase()}.xml`
+        document.body.appendChild(xmlLink)
+        xmlLink.click()
+        document.body.removeChild(xmlLink)
+        window.URL.revokeObjectURL(xmlUrl)
+
+      } catch (err) {
+        console.error(`Failed to download files for ${title}:`, err)
       }
     }
 
@@ -785,7 +830,7 @@ function App() {
       gap: "32px",
       marginTop: "24px",
       padding: "16px",
-      backgroundColor: "#2D2D38",
+      backgroundColor: " #2D2D38",
       borderRadius: "8px",
     },
     metadataItem: {
